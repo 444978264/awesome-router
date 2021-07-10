@@ -1,10 +1,10 @@
 import { History } from 'history';
 import React, {
   ComponentType,
-  MutableRefObject,
   PropsWithChildren,
   ReactNode,
   Suspense,
+  SuspenseProps,
 } from 'react';
 import {
   generatePath,
@@ -19,7 +19,7 @@ import { IMiddleware } from './useMiddleware';
 import { withMiddleware } from './withMiddleware';
 
 interface IRouterExtra {
-  middleware?: IMiddleware<MutableRefObject<History<any>>>[];
+  middleware?: IMiddleware<History<any>>[];
   routes?: IRouteChild[];
   redirect?: string;
   name: string;
@@ -95,7 +95,7 @@ export class RouteChild {
 
   public get children() {
     return (
-      <Suspense fallback={null}>
+      <Suspense fallback={this.fallback}>
         <Switch>{this._children.map(route => route.root)}</Switch>
       </Suspense>
     );
@@ -110,7 +110,11 @@ export class RouteChild {
     return this._parent;
   }
 
-  constructor(_options: IRouteChild, private readonly _parent?: RouteChild) {
+  constructor(
+    _options: IRouteChild,
+    private readonly _parent?: RouteChild,
+    public fallback: SuspenseProps['fallback'] = null
+  ) {
     const { name, title, icon, middleware = [], redirect, ...props } = _options;
     this.name = name;
     this.title = title;
@@ -119,8 +123,9 @@ export class RouteChild {
     this._middleware = middleware;
     this._isRedirect = !!redirect;
     this.RouteWrapComponent = this._middleware.length
-      ? withMiddleware<History>(Route, {
+      ? withMiddleware(Route, {
           middleware: this._middleware,
+          fallback: this.fallback,
         })
       : Route;
   }

@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export type IMiddleware<T = any> = (
-  done: any,
-  opts?: T
-) => boolean | Promise<boolean>;
+export type IMiddleware<T = any> = (opts?: T) => boolean | Promise<boolean>;
 
 interface IMiddlewareResolve {
   success: boolean;
@@ -15,7 +12,7 @@ interface IDone {
   cancel(): void;
 }
 
-export function done<T>(middleware: IMiddleware[] = [], opts?: T): IDone {
+export function done<T>(middleware: IMiddleware<T>[] = [], opts?: T): IDone {
   let idx = 0;
   let isCancel = false;
   const len = middleware.length;
@@ -39,7 +36,7 @@ export function done<T>(middleware: IMiddleware[] = [], opts?: T): IDone {
 }
 
 export function useMiddleware<T = any>(
-  middleware: IMiddleware[] = [],
+  middleware: IMiddleware<T>[] = [],
   opts?: T
 ) {
   const [passed, setPassed] = useState(false);

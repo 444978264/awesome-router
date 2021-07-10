@@ -1,7 +1,11 @@
 import { createBrowserHistory, createHashHistory, History } from 'history';
-import React from 'react';
+import React, { SuspenseProps } from 'react';
 import { Redirect, Router as Wrap, RouterProps } from 'react-router-dom';
 import { IRouteChild, RouteChild } from './RouteChild';
+
+interface IRouterConfig {
+  fallback: SuspenseProps['fallback'];
+}
 
 export class Router {
   static history: History<any> = createBrowserHistory();
@@ -19,8 +23,12 @@ export class Router {
 
   private _routeMap: Record<string, RouteChild> | null = null;
   private _tree: RouteChild[] = [];
+  private _fallback: IRouterConfig['fallback'] = null;
 
-  constructor(private _options: IRouteChild[]) {
+  constructor(private _options: IRouteChild[], config?: IRouterConfig) {
+    if (config) {
+      this._fallback = config.fallback;
+    }
     this._tree = this._iterateTree(this._options);
   }
 
@@ -50,7 +58,7 @@ export class Router {
         };
       }
 
-      const route = new RouteChild(routeConfig, parent);
+      const route = new RouteChild(routeConfig, parent, this._fallback);
 
       if (!routeConfig.redirect) {
         Reflect.set(this._routeMap, routeConfig.name, route);

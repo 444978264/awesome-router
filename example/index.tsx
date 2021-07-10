@@ -2,7 +2,7 @@ import * as React from 'react';
 import 'react-app-polyfill/ie11';
 import * as ReactDOM from 'react-dom';
 import { Link, Switch } from 'react-router-dom';
-import { Router, PropsWithRoute } from '../.';
+import { PropsWithRoute, Router } from '../.';
 
 const BrowserRouter = Router.useBrowser();
 
@@ -47,36 +47,50 @@ function AChild_3(props: any) {
 function B() {
   return <div>B page</div>;
 }
-
-const router = new Router([
+const router = new Router(
+  [
+    {
+      path: '/a',
+      name: 'A',
+      component: A,
+      routes: [
+        {
+          name: 'A_1',
+          path: '/1',
+          component: AChild_1,
+          middleware: [
+            function(history) {
+              console.log(history, 'history');
+              return new Promise(r => {
+                setTimeout(() => {
+                  r(true);
+                }, 5000);
+              });
+            },
+          ],
+        },
+        {
+          name: 'A_2',
+          path: '/2',
+          component: AChild_2,
+        },
+        {
+          path: '/*',
+          name: 'RedirectA',
+          redirect: 'A',
+        },
+      ],
+    },
+    {
+      name: 'B',
+      path: '/b',
+      component: B,
+    },
+  ],
   {
-    path: '/a',
-    name: 'A',
-    component: A,
-    routes: [
-      {
-        name: 'A_1',
-        path: '/1',
-        component: AChild_1,
-      },
-      {
-        name: 'A_2',
-        path: '/2',
-        component: AChild_2,
-      },
-      {
-        path: '/*',
-        name: 'RedirectA',
-        redirect: 'A',
-      },
-    ],
-  },
-  {
-    name: 'B',
-    path: '/b',
-    component: B,
-  },
-]);
+    fallback: 'loading...',
+  }
+);
 
 const App = () => {
   return (
