@@ -1,35 +1,26 @@
-import { createBrowserHistory, createHashHistory, History } from 'history';
 import React, { SuspenseProps } from 'react';
-import { Redirect, Router as Wrap, RouterProps } from 'react-router-dom';
+import { Redirect } from 'react-router-dom';
+import { History, IHistory } from './history';
 import { IRouteChild, RouteChild } from './RouteChild';
 
-interface IRouterConfig {
-  fallback: SuspenseProps['fallback'];
+interface IRouterConfig extends IHistory {
+  routes: IRouteChild[];
+  fallback?: SuspenseProps['fallback'];
 }
 
-export class Router {
-  static history: History<any> = createBrowserHistory();
-  static useHash() {
-    Router.history = createHashHistory();
-    return Router.Wrap;
-  }
-  static useBrowser() {
-    Router.history = createBrowserHistory();
-    return Router.Wrap;
-  }
-  static Wrap(props: Omit<RouterProps, 'history'>) {
-    return <Wrap {...props} history={Router.history} />;
-  }
-
+export class Router extends History {
+  private _routes: IRouteChild[];
   private _routeMap: Record<string, RouteChild> | null = null;
   private _tree: RouteChild[] = [];
   private _fallback: IRouterConfig['fallback'] = null;
 
-  constructor(private _options: IRouteChild[], config?: IRouterConfig) {
-    if (config) {
-      this._fallback = config.fallback;
+  constructor({ routes = [], fallback, ...other }: IRouterConfig) {
+    super(other);
+    if (fallback) {
+      this._fallback = fallback;
     }
-    this._tree = this._iterateTree(this._options);
+    this._routes = routes;
+    this._tree = this._iterateTree(this._routes);
   }
 
   get root() {

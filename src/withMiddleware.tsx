@@ -1,5 +1,6 @@
 import React, { ComponentType, PropsWithChildren } from 'react';
-import { Router } from './Router';
+import { useHistory } from 'react-router';
+
 import {
   IMiddleware,
   useMiddleware,
@@ -21,10 +22,12 @@ export function withMiddleware<T>(
     children,
     ...props
   }: PropsWithChildren<any>) => {
+    const history = useHistory();
+
     return useMiddleware(
       middleware,
       {
-        history: Router.history,
+        history,
         ...props,
       },
       context

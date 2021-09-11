@@ -1,10 +1,13 @@
 import * as React from 'react';
 import 'react-app-polyfill/ie11';
 import * as ReactDOM from 'react-dom';
-import { Link, Switch } from 'react-router-dom';
+import {
+  Link,
+  Switch,
+  Router as BrowserRouter,
+  useHistory,
+} from 'react-router-dom';
 import { PropsWithRoute, Router } from '../.';
-
-const BrowserRouter = Router.useBrowser();
 
 function A({ children, route }: PropsWithRoute) {
   return (
@@ -30,7 +33,8 @@ function A({ children, route }: PropsWithRoute) {
 }
 
 function AChild_1(props: any) {
-  console.log(props, 'AChild_1');
+  const history = useHistory();
+  console.log(props, history, 'AChild_1');
   return <div>A child 1 page</div>;
 }
 
@@ -48,8 +52,9 @@ function B() {
   return <div>B page</div>;
 }
 
-const router = new Router(
-  [
+const router = new Router({
+  mode: 'history',
+  routes: [
     {
       path: '/a',
       name: 'A',
@@ -98,15 +103,15 @@ const router = new Router(
       component: B,
     },
   ],
-  {
-    fallback: 'loading...',
-  }
-);
+  fallback: 'loading...',
+});
+
+console.log(router, 'router');
 
 const App = () => {
   return (
     <div>
-      <BrowserRouter>
+      <BrowserRouter history={router.history}>
         <Link to="/a">A page</Link>
         <Link to="/b">B page</Link>
         <Switch>{router.root}</Switch>
