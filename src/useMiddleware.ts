@@ -17,7 +17,7 @@ export function done<T>(middleware: IMiddleware<T>[] = [], opts?: T): IDone {
   let isCancel = false;
   const len = middleware.length;
   function next(final: boolean): Promise<IMiddlewareResolve> {
-    if (idx >= len || !final)
+    if (idx >= len || !final || isCancel)
       return Promise.resolve({
         success: final,
         canceled: isCancel,

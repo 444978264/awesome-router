@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import {
   generatePath,
+  match,
   matchPath,
   Route,
   RouteChildrenProps,
@@ -19,7 +20,11 @@ import { IMiddleware } from './useMiddleware';
 import { withMiddleware } from './withMiddleware';
 
 interface IRouterExtra {
-  middleware?: IMiddleware<History<any>>[];
+  middleware?: IMiddleware<{
+    history: History<any>;
+    computedMatch: match;
+    location: Location;
+  }>[];
   routes?: IRouteChild[];
   redirect?: string;
   name: string;

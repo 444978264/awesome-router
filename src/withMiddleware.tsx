@@ -12,8 +12,11 @@ export function withMiddleware<T>(
   WrappedComponent: ComponentType,
   { middleware, injectProps, fallback }: IWithMiddleware<T>
 ) {
-  const WithMiddlewareComponent = (props: PropsWithChildren<any>) => {
-    return useMiddleware(middleware, Router.history) ? (
+  const WithMiddlewareComponent = ({
+    children,
+    ...props
+  }: PropsWithChildren<any>) => {
+    return useMiddleware(middleware, { history: Router.history, ...props }) ? (
       <WrappedComponent {...injectProps} {...props} />
     ) : (
       fallback
