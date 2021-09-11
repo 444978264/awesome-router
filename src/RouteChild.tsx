@@ -30,6 +30,7 @@ interface IRouterExtra {
   name: string;
   title?: ReactNode;
   icon?: ReactNode;
+  fallback?: SuspenseProps['fallback'];
 }
 
 export type IRouteChild = Omit<RouteProps, 'children'> & IRouterExtra;
@@ -43,6 +44,7 @@ export class RouteChild {
   public readonly title: IRouteChild['title'];
   public readonly icon: IRouteChild['icon'];
   public state = false;
+  public fallback: SuspenseProps['fallback'];
   private _children: RouteChild[] = [];
   private readonly _middleware: IMiddleware[];
   private readonly _props: RouteProps;
@@ -127,15 +129,25 @@ export class RouteChild {
   constructor(
     _options: IRouteChild,
     private readonly _parent?: RouteChild,
-    public fallback: SuspenseProps['fallback'] = null
+    _fallback: SuspenseProps['fallback'] = null
   ) {
-    const { name, title, icon, middleware = [], redirect, ...props } = _options;
+    const {
+      name,
+      title,
+      icon,
+      middleware = [],
+      redirect,
+      fallback,
+      ...props
+    } = _options;
     this.name = name;
     this.title = title;
     this.icon = icon;
     this._props = props;
     this._middleware = middleware;
     this._isRedirect = !!redirect;
+    this.fallback = fallback ?? this._parent?.fallback ?? _fallback;
+
     this.RouteWrapComponent = this._middleware.length
       ? withMiddleware(Route, {
           middleware: this._middleware,
@@ -158,7 +170,7 @@ export class RouteChild {
   }
   public addChild(route: IRouteChild): RouteChild;
   public addChild(route: RouteChild): RouteChild;
-  public addChild(route: RouteChild) {
+  public addChild(route: RouteChild | IRouteChild) {
     const child =
       route instanceof RouteChild ? route : new RouteChild(route, this);
 
