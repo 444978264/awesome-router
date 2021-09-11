@@ -47,10 +47,12 @@ export class RouteChild {
   private readonly _props: RouteProps;
   private _isRedirect: boolean;
   private readonly RouteWrapComponent: ComponentType<RouteProps>;
+  private _root?: JSX.Element;
 
   public get isRedirect() {
     return this._isRedirect;
   }
+
   get isExact() {
     return !this._isRedirect && (this.match ? this.match.isExact : false);
   }
@@ -67,35 +69,41 @@ export class RouteChild {
   }
 
   public get root() {
-    const {
-      RouteWrapComponent,
-      _props: { component: Component, render, ...other },
-    } = this;
+    if (!this._root) {
+      const {
+        RouteWrapComponent,
+        _props: { component: Component, render, ...other },
+      } = this;
 
-    const C = Component
-      ? (props: any) => {
-          return (
-            <Component {...props} route={this}>
-              {this.children}
-            </Component>
-          );
-        }
-      : render
-      ? (props: any) =>
-          render({
-            ...props,
-            children: this.children,
-            route: this,
-          })
-      : null;
+      const C = Component
+        ? (props: any) => {
+            return (
+              <Component {...props} route={this}>
+                {this.children}
+              </Component>
+            );
+          }
+        : render
+        ? (props: any) =>
+            render({
+              ...props,
+              children: this.children,
+              route: this,
+            })
+        : null;
 
-    const RenderView = C ? withRouter(C as ComponentType<any>) : React.Fragment;
+      const RenderView = C
+        ? withRouter(C as ComponentType<any>)
+        : React.Fragment;
 
-    return (
-      <RouteWrapComponent {...other} path={this.path} key={this.name}>
-        <RenderView />
-      </RouteWrapComponent>
-    );
+      this._root = (
+        <RouteWrapComponent {...other} path={this.path} key={this.name}>
+          <RenderView />
+        </RouteWrapComponent>
+      );
+    }
+
+    return this._root;
   }
 
   public get children() {
