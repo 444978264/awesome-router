@@ -155,7 +155,13 @@ export class RouteChild {
   public addChild(route: RouteChild) {
     const child =
       route instanceof RouteChild ? route : new RouteChild(route, this);
-    this._children.unshift(child);
+
+    if (child.isRedirect) {
+      this._children.push(child);
+    } else {
+      this._children.unshift(child);
+    }
+
     return this;
   }
 }
