@@ -20,11 +20,11 @@ import { IMiddleware } from './useMiddleware';
 import { withMiddleware } from './withMiddleware';
 
 interface IRouterExtra {
-  middleware?: IMiddleware<{
+  middleware?: ((d: {
     history: History<any>;
     computedMatch: match;
     location: Location;
-  }>[];
+  }) => ReturnType<IMiddleware>)[];
   routes?: IRouteChild[];
   redirect?: string;
   name: string;

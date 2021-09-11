@@ -21,7 +21,7 @@ function A({ children, route }: PropsWithRoute) {
       >
         add page 3
       </button>
-      <Link to="/a/1">A_1 page</Link>
+      <Link to="/a/1/1997">A_1 page</Link>
       <Link to="/a/2">A_2 page</Link>
       <Link to="/a/3">A_3 page</Link>
       {children}
@@ -47,20 +47,31 @@ function AChild_3(props: any) {
 function B() {
   return <div>B page</div>;
 }
+
 const router = new Router(
   [
     {
       path: '/a',
       name: 'A',
       component: A,
+      middleware: [
+        function({ history, computedMatch }) {
+          console.log(history, computedMatch, 'A history');
+          return new Promise(r => {
+            setTimeout(() => {
+              r(true);
+            }, 5000);
+          });
+        },
+      ],
       routes: [
         {
           name: 'A_1',
-          path: '/1',
+          path: '/1/:time',
           component: AChild_1,
           middleware: [
-            function(history) {
-              console.log(history, 'history');
+            function({ history, computedMatch }) {
+              console.log(history, computedMatch, 'A_1 history');
               return new Promise(r => {
                 setTimeout(() => {
                   r(true);
@@ -77,7 +88,7 @@ const router = new Router(
         {
           path: '/*',
           name: 'RedirectA',
-          redirect: 'A',
+          redirect: 'A_2',
         },
       ],
     },

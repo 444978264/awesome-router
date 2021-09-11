@@ -16,8 +16,13 @@ export function withMiddleware<T>(
     children,
     ...props
   }: PropsWithChildren<any>) => {
-    return useMiddleware(middleware, { history: Router.history, ...props }) ? (
-      <WrappedComponent {...injectProps} {...props} />
+    return useMiddleware(middleware, {
+      history: Router.history,
+      ...props,
+    }) ? (
+      <WrappedComponent {...injectProps} {...props}>
+        {children}
+      </WrappedComponent>
     ) : (
       fallback
     );

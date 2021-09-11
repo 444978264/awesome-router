@@ -41,7 +41,7 @@ export function useMiddleware<T = any>(
 ) {
   const [passed, setPassed] = useState(false);
   useEffect(() => {
-    const { promise, cancel } = done(middleware, opts);
+    const { promise, cancel } = done<T>(middleware, opts);
     promise.then(({ success, canceled }) => {
       if (!canceled && success) {
         setPassed(true);
