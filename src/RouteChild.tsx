@@ -42,6 +42,7 @@ export class RouteChild {
   public readonly name: IRouteChild['name'];
   public readonly title: IRouteChild['title'];
   public readonly icon: IRouteChild['icon'];
+  public state = false;
   private _children: RouteChild[] = [];
   private readonly _middleware: IMiddleware[];
   private readonly _props: RouteProps;
@@ -139,8 +140,13 @@ export class RouteChild {
       ? withMiddleware(Route, {
           middleware: this._middleware,
           fallback: this.fallback,
+          context: this,
         })
       : Route;
+  }
+
+  setState(value: boolean) {
+    this.state = value;
   }
 
   public realPath(params?: Record<string, any>) {
