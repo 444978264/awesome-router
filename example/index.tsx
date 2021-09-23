@@ -1,10 +1,13 @@
 import * as React from 'react';
 import 'react-app-polyfill/ie11';
 import * as ReactDOM from 'react-dom';
-import { Link, Switch } from 'react-router-dom';
+import {
+  Link,
+  Switch,
+  Router as BrowserRouter,
+  useHistory,
+} from 'react-router-dom';
 import { PropsWithRoute, Router } from '../.';
-
-const BrowserRouter = Router.useBrowser();
 
 function A({ children, route }: PropsWithRoute) {
   return (
@@ -21,7 +24,7 @@ function A({ children, route }: PropsWithRoute) {
       >
         add page 3
       </button>
-      <Link to="/a/1">A_1 page</Link>
+      <Link to="/a/1/1997">A_1 page</Link>
       <Link to="/a/2">A_2 page</Link>
       <Link to="/a/3">A_3 page</Link>
       {children}
@@ -30,7 +33,8 @@ function A({ children, route }: PropsWithRoute) {
 }
 
 function AChild_1(props: any) {
-  console.log(props, 'AChild_1');
+  const history = useHistory();
+  console.log(props, history, 'AChild_1');
   return <div>A child 1 page</div>;
 }
 
@@ -47,20 +51,32 @@ function AChild_3(props: any) {
 function B() {
   return <div>B page</div>;
 }
-const router = new Router(
-  [
+
+const router = new Router({
+  mode: 'history',
+  routes: [
     {
       path: '/a',
       name: 'A',
       component: A,
+      middleware: [
+        function({ history, computedMatch }) {
+          console.log(history, computedMatch, 'A history');
+          return new Promise(r => {
+            setTimeout(() => {
+              r(true);
+            }, 5000);
+          });
+        },
+      ],
       routes: [
         {
           name: 'A_1',
-          path: '/1',
+          path: '/1/:time',
           component: AChild_1,
           middleware: [
-            function(history) {
-              console.log(history, 'history');
+            function({ history, computedMatch }) {
+              console.log(history, computedMatch, 'A_1 history');
               return new Promise(r => {
                 setTimeout(() => {
                   r(true);
@@ -77,7 +93,7 @@ const router = new Router(
         {
           path: '/*',
           name: 'RedirectA',
-          redirect: 'A',
+          redirect: 'A_2',
         },
       ],
     },
@@ -87,15 +103,15 @@ const router = new Router(
       component: B,
     },
   ],
-  {
-    fallback: 'loading...',
-  }
-);
+  fallback: 'loading...',
+});
+
+console.log(router, 'router');
 
 const App = () => {
   return (
     <div>
-      <BrowserRouter>
+      <BrowserRouter history={router.history}>
         <Link to="/a">A page</Link>
         <Link to="/b">B page</Link>
         <Switch>{router.root}</Switch>

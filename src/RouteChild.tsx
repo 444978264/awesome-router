@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import {
   generatePath,
+  match,
   matchPath,
   Route,
   RouteChildrenProps,
@@ -19,12 +20,17 @@ import { IMiddleware } from './useMiddleware';
 import { withMiddleware } from './withMiddleware';
 
 interface IRouterExtra {
-  middleware?: IMiddleware<History<any>>[];
+  middleware?: ((d: {
+    history: History<any>;
+    computedMatch: match;
+    location: Location;
+  }) => ReturnType<IMiddleware>)[];
   routes?: IRouteChild[];
   redirect?: string;
   name: string;
   title?: ReactNode;
   icon?: ReactNode;
+  fallback?: SuspenseProps['fallback'];
 }
 
 export type IRouteChild = Omit<RouteProps, 'children'> & IRouterExtra;
@@ -37,15 +43,19 @@ export class RouteChild {
   public readonly name: IRouteChild['name'];
   public readonly title: IRouteChild['title'];
   public readonly icon: IRouteChild['icon'];
+  public state = false;
+  public fallback: SuspenseProps['fallback'];
   private _children: RouteChild[] = [];
   private readonly _middleware: IMiddleware[];
   private readonly _props: RouteProps;
   private _isRedirect: boolean;
   private readonly RouteWrapComponent: ComponentType<RouteProps>;
+  private _root?: JSX.Element;
 
   public get isRedirect() {
     return this._isRedirect;
   }
+
   get isExact() {
     return !this._isRedirect && (this.match ? this.match.isExact : false);
   }
@@ -62,35 +72,41 @@ export class RouteChild {
   }
 
   public get root() {
-    const {
-      RouteWrapComponent,
-      _props: { component: Component, render, ...other },
-    } = this;
+    if (!this._root) {
+      const {
+        RouteWrapComponent,
+        _props: { component: Component, render, ...other },
+      } = this;
 
-    const C = Component
-      ? (props: any) => {
-          return (
-            <Component {...props} route={this}>
-              {this.children}
-            </Component>
-          );
-        }
-      : render
-      ? (props: any) =>
-          render({
-            ...props,
-            children: this.children,
-            route: this,
-          })
-      : null;
+      const C = Component
+        ? (props: any) => {
+            return (
+              <Component {...props} route={this}>
+                {this.children}
+              </Component>
+            );
+          }
+        : render
+        ? (props: any) =>
+            render({
+              ...props,
+              children: this.children,
+              route: this,
+            })
+        : null;
 
-    const RenderView = C ? withRouter(C as ComponentType<any>) : React.Fragment;
+      const RenderView = C
+        ? withRouter(C as ComponentType<any>)
+        : React.Fragment;
 
-    return (
-      <RouteWrapComponent {...other} path={this.path} key={this.name}>
-        <RenderView />
-      </RouteWrapComponent>
-    );
+      this._root = (
+        <RouteWrapComponent {...other} path={this.path} key={this.name}>
+          <RenderView />
+        </RouteWrapComponent>
+      );
+    }
+
+    return this._root;
   }
 
   public get children() {
@@ -113,21 +129,36 @@ export class RouteChild {
   constructor(
     _options: IRouteChild,
     private readonly _parent?: RouteChild,
-    public fallback: SuspenseProps['fallback'] = null
+    _fallback: SuspenseProps['fallback'] = null
   ) {
-    const { name, title, icon, middleware = [], redirect, ...props } = _options;
+    const {
+      name,
+      title,
+      icon,
+      middleware = [],
+      redirect,
+      fallback,
+      ...props
+    } = _options;
     this.name = name;
     this.title = title;
     this.icon = icon;
     this._props = props;
     this._middleware = middleware;
     this._isRedirect = !!redirect;
+    this.fallback = fallback ?? this._parent?.fallback ?? _fallback;
+
     this.RouteWrapComponent = this._middleware.length
       ? withMiddleware(Route, {
           middleware: this._middleware,
           fallback: this.fallback,
+          context: this,
         })
       : Route;
+  }
+
+  setState(value: boolean) {
+    this.state = value;
   }
 
   public realPath(params?: Record<string, any>) {
@@ -139,10 +170,16 @@ export class RouteChild {
   }
   public addChild(route: IRouteChild): RouteChild;
   public addChild(route: RouteChild): RouteChild;
-  public addChild(route: RouteChild) {
+  public addChild(route: RouteChild | IRouteChild) {
     const child =
       route instanceof RouteChild ? route : new RouteChild(route, this);
-    this._children.unshift(child);
+
+    if (child.isRedirect) {
+      this._children.push(child);
+    } else {
+      this._children.unshift(child);
+    }
+
     return this;
   }
 }

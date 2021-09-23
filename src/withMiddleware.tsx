@@ -1,20 +1,40 @@
 import React, { ComponentType, PropsWithChildren } from 'react';
-import { Router } from './Router';
-import { IMiddleware, useMiddleware } from './useMiddleware';
+import { useHistory } from 'react-router';
+
+import {
+  IMiddleware,
+  useMiddleware,
+  IMiddlewareContext,
+} from './useMiddleware';
 
 interface IWithMiddleware<T = any> {
   middleware: IMiddleware[];
   injectProps?: T;
+  context?: IMiddlewareContext;
   fallback?: any;
 }
 
 export function withMiddleware<T>(
   WrappedComponent: ComponentType,
-  { middleware, injectProps, fallback }: IWithMiddleware<T>
+  { middleware, injectProps, fallback, context }: IWithMiddleware<T>
 ) {
-  const WithMiddlewareComponent = (props: PropsWithChildren<any>) => {
-    return useMiddleware(middleware, Router.history) ? (
-      <WrappedComponent {...injectProps} {...props} />
+  const WithMiddlewareComponent = ({
+    children,
+    ...props
+  }: PropsWithChildren<any>) => {
+    const history = useHistory();
+
+    return useMiddleware(
+      middleware,
+      {
+        history,
+        ...props,
+      },
+      context
+    ) ? (
+      <WrappedComponent {...injectProps} {...props}>
+        {children}
+      </WrappedComponent>
     ) : (
       fallback
     );

@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 
 export type IMiddleware<T = any> = (opts?: T) => boolean | Promise<boolean>;
 
+export interface IMiddlewareContext {
+  state: boolean;
+  setState(val: boolean): void;
+}
+
 interface IMiddlewareResolve {
   success: boolean;
   canceled: boolean;
@@ -17,7 +22,7 @@ export function done<T>(middleware: IMiddleware<T>[] = [], opts?: T): IDone {
   let isCancel = false;
   const len = middleware.length;
   function next(final: boolean): Promise<IMiddlewareResolve> {
-    if (idx >= len || !final)
+    if (idx >= len || !final || isCancel)
       return Promise.resolve({
         success: final,
         canceled: isCancel,
@@ -37,17 +42,28 @@ export function done<T>(middleware: IMiddleware<T>[] = [], opts?: T): IDone {
 
 export function useMiddleware<T = any>(
   middleware: IMiddleware<T>[] = [],
-  opts?: T
+  opts?: T,
+  context?: IMiddlewareContext
 ) {
   const [passed, setPassed] = useState(false);
   useEffect(() => {
-    const { promise, cancel } = done(middleware, opts);
-    promise.then(({ success, canceled }) => {
-      if (!canceled && success) {
-        setPassed(true);
-      }
-    });
-    return () => cancel();
+    if (!context?.state) {
+      const { promise, cancel } = done<T>(middleware, opts);
+      promise.then(({ success, canceled }) => {
+        if (!canceled && success) {
+          setPassed(true);
+          context?.setState(true);
+        }
+      });
+
+      return () => {
+        context?.setState(false);
+        cancel();
+      };
+    }
+    return () => {
+      context?.setState(false);
+    };
   }, [middleware]);
   return passed;
 }
